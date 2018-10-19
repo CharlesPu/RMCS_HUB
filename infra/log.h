@@ -1,5 +1,8 @@
-#ifndef __PUSH_LOG_H__
-#define __PUSH_LOG_H__
+#ifndef __RMCS_HUB_LOG_H__
+#define __RMCS_HUB_LOG_H__
+
+#include <unistd.h>
+#include <pthread.h>
 
 /* error num */
 #define ERR_NONE 					0
@@ -40,5 +43,21 @@ int LOG_Init(void);
 int LOG_Save(char* data, int len);
 int LOG_Print(const char *log_type, int err_n, int line_n, const char *func_name, const char* format, ...);
 int LOG_Free(void);
+
+class HUB_log
+{
+public:
+	HUB_log();
+	~HUB_log();
+
+	int Init(void);
+	int Save(char* data, int len);
+	int Print(const char *log_type, int err_n, int line_n, const char *func_name, const char* format, ...);
+	int Free(void);
+	
+private:
+	pthread_mutex_t LOG_out_file_mutex;
+	FILE* LOG_out_fd;
+};
 
 #endif
