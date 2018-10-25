@@ -23,22 +23,24 @@ LIB_DIR 	:= $(A_LIB_DIR)
 LIBS 		:= $(LIBS_A)
 
 CC = g++
-CFLAGS = -O2 -Wall -g
+CFLAGS = -O2 -Wall -g `mysql_config --cflags` -std=c++11
 INCFLAGS = $(foreach i, $(INC_DIR),-I$(i))
 LDFLAGS += $(foreach i, $(LIB_DIR),-L$(i))
 LDFLAGS += $(foreach i, $(LIBS),-l$(i))
-DY_LDFLAGS =-Wl,-rpath=$(EH_LIB_DIR)
+SQL_LINK_FLAGS = `mysql_config --libs`
+MTHREADFLAGS = -pthread
+OMPFLAGS = -fopenmp
 
 all:clean $(EXEC)
 
 $(EXEC):$(CPP_OBJS)
-	$(CC) -o $@ $(CPP_OBJS) $(LDFLAGS)
+	$(CC) -o $@ $(CPP_OBJS) $(MTHREADFLAGS) $(SQL_LINK_FLAGS) $(OMPFLAGS)
 	@echo "Make Done~"
 
 VPATH = $(CPP_SRCS_DIR)
 ${DIR_OBJ}%.o:${DIR_CURR}%.cpp	
 	@if [ ! -d $(DIR_OBJ) ]; then mkdir -p $(DIR_OBJ); fi; 
-	@$(CC) -c $< -o $@ $(CFLAGS) $(INCFLAGS)
+	@$(CC) -c $< -o $@ $(CFLAGS) $(INCFLAGS) $(MTHREADFLAGS) $(OMPFLAGS)
 
 .PHONY:clean
 clean:

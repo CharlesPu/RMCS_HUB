@@ -1,9 +1,6 @@
 #ifndef __RMCS_HUB_LOG_H__
 #define __RMCS_HUB_LOG_H__
 
-#include <unistd.h>
-#include <pthread.h>
-
 /* error num */
 #define ERR_NONE 					0
 #define ERR_VTDU_START				1
@@ -31,33 +28,17 @@
 #define ERR_RTMP_SEND				21
 
 #define LOG_INFO(fmt, ...)	\
-		LOG_Print("INFO", 0, __LINE__, __FUNCTION__, fmt, ##__VA_ARGS__)
+ 		LOG_Print("INFO", 0, __LINE__, __FUNCTION__, fmt, ##__VA_ARGS__)
 #define LOG_WARN(fmt, ...)	\
-		LOG_Print("WARN", 0, __LINE__, __FUNCTION__, fmt, ##__VA_ARGS__)
+ 		LOG_Print("WARN", 0, __LINE__, __FUNCTION__, fmt, ##__VA_ARGS__)
 #define LOG_ERROR(n, fmt, ...)	\
-		LOG_Print("ERROR", n, __LINE__, __FUNCTION__, fmt, ##__VA_ARGS__)
+ 		LOG_Print("ERROR", n, __LINE__, __FUNCTION__, fmt, ##__VA_ARGS__)
 #define LOG_DEBUG(fmt, ...)	\
-		LOG_Print("DEBUG", 0, __LINE__, __FUNCTION__, fmt, ##__VA_ARGS__)
+ 		LOG_Print("DEBUG", 0, __LINE__, __FUNCTION__, fmt, ##__VA_ARGS__)
 
-int LOG_Init(void);
+int LOG_Init(const char *p, int n);
 int LOG_Save(char* data, int len);
 int LOG_Print(const char *log_type, int err_n, int line_n, const char *func_name, const char* format, ...);
 int LOG_Free(void);
-
-class HUB_log
-{
-public:
-	HUB_log();
-	~HUB_log();
-
-	int Init(void);
-	int Save(char* data, int len);
-	int Print(const char *log_type, int err_n, int line_n, const char *func_name, const char* format, ...);
-	int Free(void);
-	
-private:
-	pthread_mutex_t LOG_out_file_mutex;
-	FILE* LOG_out_fd;
-};
 
 #endif

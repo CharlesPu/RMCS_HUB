@@ -1,54 +1,49 @@
 /*******************************
 @@Author     :  Charles
-@@Date       :  2018-10-19
+@@Date       :  2018-10-22
 @@Mail       :  pu17rui@sina.com
 @@Description: 	
 *******************************/
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <pthread.h>
+#include "server.h"
+#include "cir_queue.h"
+#include "log.h"
+#include "rtu.h"
+#include "db.h"
+#include "cmd_send.h"
+#include "process.h"
+#include "mthread.h"
+#include "config.h"
 
 int main(int argc, char const *argv[])
 {
-	int port;
-	if (argc == 1)
-		port = PORT;
-	else
-		port = atoi(argv[1]);
-	Server serv;
-	if (serv.ServerInit(port))
-		return 1;
-	printf("Server init success! port:%d\n",port);
-	Rtus rtus;
-
+	LOG_Init(LOG_OUT_PATH, LOG_CONTENT_MAX);
 	mysql_library_init(0, NULL, NULL);
-	Params params;
-	params._rtus=&rtus;
-	params._server=&serv;
 
-	pthread_t threads[TASK_NUM];
-	Task tasks;
-	tasks.TaskInit();
-	//创建线程
-	int ret1=pthread_create(&threads[0],&tasks.attr[0],tasks.ServerReceive,(void*)&params);
-	int ret2=pthread_create(&threads[1],&tasks.attr[1],tasks.DataProcess,(void*)&rtus);
-	int ret3=pthread_create(&threads[2],&tasks.attr[2],tasks.Control,(void*)&params);
-	//记住要摧毁attr[ ]!!!
-	for(int i=0;i<TASK_NUM;i++)
-		pthread_attr_destroy(&tasks.attr[i]);
+	Rtus rtus(RTUS_MAX);
+	// rtus.test();
+	HUB_Server hub_serv(SRV_PORT, SRV_IP, SRV_CLIENT_MAX, SRV_BUF_MAX);
+	struct _thread_args t_args;
+	t_args._rtus		= &rtus;
+	t_args._hub_server	= &hub_serv;
 
-	if(ret1 || ret2 ||ret3)
-	{
-		perror("Threads create error!\n");
-		return 1;
-	}
-	printf("Threads create success!\n");
-	//让线程跑起来~
-	for(int i=0;i<TASK_NUM;i++)
-		pthread_join(threads[i],0);
+	HUB_Process hub_process;
+	HUB_CMD_Send hub_cmd_send;
+	HUB_MThread threads(&t_args, 3);
+	threads.CreateThread(SCHED_RR, 99, hub_serv.Receive);
+	threads.CreateThread(SCHED_RR, 98, hub_process.Process);
+	threads.CreateThread(SCHED_RR, 97, hub_cmd_send.CMD_Send);
+
+	threads.Run();
 
 	mysql_library_end();
+
+	LOG_Free();
 	
 	return 0;
 }
+
+

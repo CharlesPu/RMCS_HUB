@@ -11,7 +11,7 @@
 #include <pthread.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <unistd.h>//close、read、write函数需要
+#include <unistd.h>
 #include <time.h>
 #include <stdarg.h>
 #include "log.h"
@@ -19,16 +19,25 @@
 
 static pthread_mutex_t gLOG_out_file_mutex;
 static FILE* gLOG_out_fd = NULL;
+static char out_file_path[128] = {0};
+static int txt_max_size = 0;
 
-int LOG_Init(void)
+int LOG_Init(const char *p, int n)
 {
 	pthread_mutex_init(&gLOG_out_file_mutex, NULL);
-
-	if (access(LOG_OUT_PATH, F_OK) == -1)
+	if (strlen(p) > sizeof(out_file_path))
 	{
-		mkdir(LOG_OUT_PATH, S_IRWXU | S_IRWXG | S_IRWXO);
+		printf("LOG init wrong!\n");
+		return 1;
+	}
+	memcpy(out_file_path, p, strlen(p));
+	txt_max_size = n;
+#ifdef LOG_SAVE
+	if (access(out_file_path, F_OK) == -1)
+	{
+		mkdir(out_file_path, S_IRWXU | S_IRWXG | S_IRWXO);
 	}	
-
+#endif
 	return 0;
 }
 int LOG_Save(char* data, int len)
@@ -42,7 +51,7 @@ int LOG_Save(char* data, int len)
 	// printf("Local time is %s", asctime(timenow));
 	pthread_mutex_lock(&gLOG_out_file_mutex);
 	/* the file name */
-	sprintf(file_name, "%slog_%d%02d%02d", LOG_OUT_PATH, 
+	sprintf(file_name, "%slog_%d%02d%02d", out_file_path, 
 				timenow->tm_year + 1900, timenow->tm_mon + 1, timenow->tm_mday);
 	// printf("%s\n", file_name);
 	if (access(file_name, F_OK) == -1 || gLOG_out_fd == NULL)//file not exists or not null
@@ -55,8 +64,8 @@ int LOG_Save(char* data, int len)
 }
 int LOG_Print(const char *log_type, int err_n, int line_n, const char *func_name, const char* format, ...)
 {
-	char buf[LOG_CONTENT_MAX_SIZE * 2] = {0};
-	char data[LOG_CONTENT_MAX_SIZE] = {0};
+	char buf[txt_max_size * 2] = {0};
+	char data[txt_max_size] = {0};
 	/*get all the params in ...*/
 	va_list args_tmp;
 	va_start(args_tmp, format);
@@ -95,7 +104,8 @@ int LOG_Free(void)
 		fclose(gLOG_out_fd);
 		gLOG_out_fd = NULL;
 	}
-
+	memset(out_file_path, 0, sizeof(out_file_path));
+	txt_max_size = 0;
 
 	return 0;
 }
