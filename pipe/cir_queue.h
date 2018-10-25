@@ -18,8 +18,8 @@ public:
  	pthread_cond_t buf_signal;
 	pthread_mutex_t buf_lock;
 
-	virtual int GetCell(unsigned char *c, int num);// 把queue往c里面读取,返回读取的字节数
-	virtual int PutCell(unsigned char *c, int num);// 把c往queue里面写入	
+	virtual int GetCell(unsigned char *c, int num);
+	virtual int PutCell(unsigned char *c, int num);
 protected:
 	int buf_max_size;
 	int cell_max_size;	
@@ -40,12 +40,12 @@ private:
 	unsigned char tail;		// read
 };
 
-// #define INC(a) ((a) = ((a) + 1) & (BUF_MAX_SIZE - 1)) //a自增但是不能超过最大范围，若超过255，则变为0，因为是8位
+// #define INC(a) ((a) = ((a) + 1) & (BUF_MAX_SIZE - 1)) 
 // #define DEC(a) ((a) = ((a) - 1) & (BUF_MAX_SIZE - 1))   
-// #define EMPTY(a) ((a).head == (a).tail)                //首末指针相等即空
+// #define EMPTY(a) ((a).head == (a).tail)                
 // #define LEFT(a) (((a).tail - (a).head - 1)&(BUF_MAX_SIZE - 1))    
 // #define LAST(a) ((a).buf[(BUF_MAX_SIZE - 1)&((a).head - 1)])      
-// #define FULL(a) (!LEFT(a))                             // 首末指针相差1则认为满
+// #define FULL(a) (!LEFT(a))                            
 // #define CHARS(a) (((a).head - (a).tail)&(BUF_MAX_SIZE-1)) 
 
 

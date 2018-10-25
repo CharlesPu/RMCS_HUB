@@ -24,8 +24,9 @@ int main(int argc, char const *argv[])
 	mysql_library_init(0, NULL, NULL);
 
 	Rtus rtus(RTUS_MAX);
+	// rtus.test();
 	HUB_Server hub_serv(SRV_PORT, SRV_IP, SRV_CLIENT_MAX, SRV_BUF_MAX);
-	struct _thread_args t_args; 
+	struct _thread_args t_args;
 	t_args._rtus		= &rtus;
 	t_args._hub_server	= &hub_serv;
 

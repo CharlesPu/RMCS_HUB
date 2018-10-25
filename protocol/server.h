@@ -18,7 +18,6 @@ public:
     
     int connect_num;
     struct sockaddr_in serv_addr;
-    // struct sockaddr_in clie_addr;
 
     unsigned char* rxbuf;
     unsigned char* txbuf;
@@ -30,8 +29,7 @@ private:
 
     int listen_fd;
     int ep_fd;
-    // struct epoll_event evt_temp;
-    struct epoll_event *evts;//传出的各个连接信息 
+    // struct epoll_event *evts;
 
 	int SetNonblock(int fd);
     static HUB_Server *this_tmp;

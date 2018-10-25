@@ -38,10 +38,10 @@ int HUB_MThread :: CreateThread(int policy, int prior, void *(*func)(void *))
 	}
 	struct sched_param sched_params;
 	pthread_attr_init(&attrs[threads_num]);
-	pthread_attr_setschedpolicy(&attrs[threads_num], policy);   //设置执行方式
+	pthread_attr_setschedpolicy(&attrs[threads_num], policy);   
 	sched_params.sched_priority = prior;
-	pthread_attr_setschedparam(&attrs[threads_num], &sched_params);//设置执行优先级
-	//要使优先级其作用必须要有这句话!!!!
+	pthread_attr_setschedparam(&attrs[threads_num], &sched_params);
+	//neccessary!
 	int ret = pthread_attr_setinheritsched(&(attrs[threads_num]), PTHREAD_EXPLICIT_SCHED);
 	if (ret)
 	{

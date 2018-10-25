@@ -34,7 +34,7 @@ HUB_Server :: HUB_Server(int p, const char *_ip, int clie_max, int buf_max)
 	memset(rxbuf, 0, buf_max_size);
 	txbuf = new unsigned char[buf_max_size];
 	memset(txbuf, 0, buf_max_size);
-	evts = new struct epoll_event[client_max_num];
+	// evts = new struct epoll_event[client_max_num];
 	/* init */
 	listen_fd = socket(AF_INET, SOCK_STREAM, 0);
 	if (listen_fd == -1)
@@ -91,7 +91,6 @@ HUB_Server :: ~HUB_Server()
 {
 	if(rxbuf != NULL) {delete[] rxbuf; rxbuf = NULL;}
 	if(txbuf != NULL) {delete[] txbuf; txbuf = NULL;}
-	if(evts != NULL) {delete[] evts; evts = NULL;}
 
 	if(listen_fd) close(listen_fd);
 }
@@ -126,64 +125,6 @@ int HUB_Server :: Accept()
 			LOG_ERROR(0, "epoll_ctl clie_fd fail!");
 			return 3;
 		}
-
-		//获取注册包！
-		// Rtus* rtus_temp = rtus;
-		// MyMySQL* mymysql_temp = mymysql;
-		// int temp = Recv(clie_fd);
-		// if(temp > 0)
-		// {
-			// unsigned char reg_package_x[8];
-			// memcpy(reg_package_x, rxbuf, 8);
-			// printf("Registration Package:");
-			// for (int i = 0; i < 8; i++)
-			// 	printf("%02x ", reg_package_x[i]);
-			// printf("\n");
-
-			// unsigned int reg_package = 0;
-			// for (int i = 0; i < 4; ++i)
-			// 	for (int j = 0; j < 8; ++j)
-			// 		reg_package += ((reg_package_x[7 - i] >> j) & 0x01) * pow(2, j + i * 8);
-			// // printf("reg:%d\n", reg_package);
-			// //注册包形式为 77 77 77 77 00 0X 0X 0X
-			// /* 查找设备信息表，如果存在相应注册包 */
-			// if (!mymysql_temp->ExistRtu(reg_package_x))
-			// {	
-			// 	RTU* rtu_ret = rtus_temp->FindRtuByRegpack(reg_package);
-			// 	if ( rtu_ret != NULL)
-			// 	{
-			// 		rtu_ret->rtu_sock = clie_fd;
-			// 	}else
-			// 	{
-			// 		rtus_temp->rtus[rtus_temp->rtus_sum].rtu_sock = clie_fd;
-			// 		rtus_temp->rtus[rtus_temp->rtus_sum].reg_pack = reg_package;
-			// 		memcpy(rtus_temp->rtus[rtus_temp->rtus_sum].reg_pack_x, reg_package_x, 8);
-			// 		rtus_temp->rtus_by_regpack[rtus_temp->rtus_sum] = &(rtus_temp->rtus[rtus_temp->rtus_sum]);
-			// 		rtus_temp->rtus_by_sock[rtus_temp->rtus_sum] = &(rtus_temp->rtus[rtus_temp->rtus_sum]);
-			// 		rtus_temp->rtus_sum++;
-			// 	}
-			// 	//更新两个排序数组
-			// 	rtus_temp->SortRtus();
-			// 	//更新rtu的socket值
-			// 	mymysql_temp->UpdateRtuSocket(clie_fd, reg_package_x);
-
-			// 	printf("Server has connected to %s:%d.\n", inet_ntoa(clie_addr.sin_addr), ntohs(clie_addr.sin_port));
-			// 	// printf("rtu_num:%d------------clie_fd:%d------------connect num:%d\n", rtus_temp->rtus_sum, clie_fd, ++connect_num);//打印连接的客户端的编号
-
-			// 	// if (Server::SetNonblock(clie_fd))//设置连接为非阻塞
-			// 	// {
-			// 	// 	perror("set clie_fd nonblock fail!");
-			// 	// 	return 2;
-			// 	// }
-			// 	evt_temp.events = EPOLLIN ;
-			// 	evt_temp.data.fd= clie_fd;
-			// 	if(epoll_ctl(ep_fd, EPOLL_CTL_ADD, clie_fd, &evt_temp) == -1)//然后挂到红黑树上去
-			// 	{
-			// 		perror("epoll_ctl clie_fd fail!");
-			// 		return 3;
-			// 	}
-			// }
-		// }
 	}	
 
 	return 0;
@@ -195,9 +136,10 @@ void *HUB_Server :: Receive(void *args)
 	Rtus *rtus_tmp 				  = args_tmp->_rtus;
 	HUB_Server *hub_server_tmp    = args_tmp->_hub_server;
 
+	struct epoll_event evts[hub_server_tmp->client_max_num];
 	while (1)
 	{	
-		int fd_num = epoll_wait(hub_server_tmp->ep_fd, hub_server_tmp->evts, hub_server_tmp->client_max_num, -1);
+		int fd_num = epoll_wait(hub_server_tmp->ep_fd, evts, hub_server_tmp->client_max_num, -1);
 		if (fd_num < 0)
 		{
 			LOG_ERROR(0, "epoll_wait fail\n");
@@ -206,13 +148,13 @@ void *HUB_Server :: Receive(void *args)
 #pragma omp parallel for 
 		for (int i = 0; i < fd_num; i++)
 		{
-			if( !(hub_server_tmp->evts[i].events & EPOLLIN))          
+			if( !(evts[i].events & EPOLLIN))          
 				continue;
-			if (hub_server_tmp->evts[i].data.fd == hub_server_tmp->listen_fd)  
+			if (evts[i].data.fd == hub_server_tmp->listen_fd)  
 				hub_server_tmp->Accept();
-			else if( hub_server_tmp->evts[i].events & EPOLLIN )     
+			else if( evts[i].events & EPOLLIN )     
 			{
-				int fd_temp = hub_server_tmp->evts[i].data.fd;
+				int fd_temp = evts[i].data.fd;
 				int bytes_num = hub_server_tmp->Recv(fd_temp);
 				if (bytes_num <= 0)
 				{

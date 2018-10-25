@@ -27,11 +27,11 @@ Buffer::~Buffer()
 	pthread_mutex_destroy(&buf_lock);
 }
 
-int Buffer::GetCell(unsigned char *c, int num)// 把queue往c里面读取
+int Buffer::GetCell(unsigned char *c, int num)
 {
 	return 0;
 }
-int Buffer::PutCell(unsigned char *c, int num)// 把c往queue里面写入
+int Buffer::PutCell(unsigned char *c, int num)
 {
 	return 0;
 }

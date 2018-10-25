@@ -26,8 +26,6 @@ public:
 
 	Rtu *rtus; //real rtus array
 	vector<Rtu*> need_proc_rtus;//real rtu's index(reg_pack)
-	// struct rtu* rtus_by_regpack[RTUS_MAX_NUM]; //按注册包(long类型)排序，存放rtu的地址
-	// struct rtu* rtus_by_sock[RTUS_MAX_NUM]; //按socket排序，存放rtu的地址
 
 	// void SortRtus(void);
 	// struct rtu* FindRtuBySock(const int socket);
