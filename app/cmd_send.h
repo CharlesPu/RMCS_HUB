@@ -11,7 +11,7 @@ public:
 
 	static void *CMD_Send(void *);
 private:
-	HUB_Mysql *hub_mysql;
+	// HUB_Mysql *hub_mysql;
 };
 
 #endif

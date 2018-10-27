@@ -26,10 +26,12 @@ HUB_Mysql :: HUB_Mysql(const char *d, const char *db_srv_name, const char *usr_n
 		LOG_ERROR(0, "mysql init db name wrong!\n");
 		return;
 	}
+	//attention!
+	memset(db_name, 0, sizeof(db_name));
 	memcpy(db_name, d, strlen(d));
 	if (!mysql_real_connect(mysql_fd, db_srv_name, usr_name, passwd, db_name, 0, NULL, 0))
 	{
-		LOG_ERROR(0, "mysql init connect db error!, mysql err_n: %d\n", mysql_error(mysql_fd));
+		LOG_ERROR(0, "mysql init connect db error!: %s\n", mysql_error(mysql_fd));
 		return;
 	}
 }
@@ -74,7 +76,7 @@ int HUB_Mysql :: ExistRtu(const unsigned char reg_pack_x[8])
 	// printf("%s\n", cmd);
 	if(mysql_query(mysql_fd, cmd))
 	{
-		LOG_ERROR(0, " mysql_query exist rtu fail\n");
+		LOG_ERROR(0, "mysql_query exist rtu fail\n");
 		ret = -1;
 	}else
 	{

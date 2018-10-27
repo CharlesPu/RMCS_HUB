@@ -17,3 +17,13 @@ A RMCS needs a hub platform to receive and pre-process data from RTUs. Under thi
 ##### version:      v0.2.0
 ##### description:
 * Finish the frame of the project.
+
+---
+## VERSIONS
+##### date:         2018-10-27
+##### version:      v0.4.0
+##### description:
+* Change the circle queue from per rtu to only one.
+* Drop OpenMP for cir_queue process cause only one cir_queue.
+* Drop OpenMP for epoll_wait()'s fd process cause the non-reentrant of "HUB_Server".
+* Leave the phase and store part in server.cpp and process.cpp, of course, cmd_send.cpp is empty.

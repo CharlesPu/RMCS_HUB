@@ -6,7 +6,6 @@
 *******************************/
 #include <stdlib.h>
 #include <stdio.h>
-#include <omp.h>
 #include <unistd.h>
 #include "process.h"
 #include "db.h"
@@ -14,6 +13,9 @@
 #include "server.h"
 #include "mthread.h"
 #include "config.h"
+#ifdef OMP_ENABLE
+#include <omp.h>
+#endif
 
 HUB_Process :: HUB_Process()
 {
@@ -32,28 +34,32 @@ void *HUB_Process :: Process(void *args)
 
 	while(1)
 	{	
-		int rtus_sum = rtus_tmp->GetNeedProcessRtus();
-#pragma omp parallel for 
-		for (int i = 0; i < rtus_sum; ++i)
+		pthread_mutex_lock(&(rtus_tmp->buf_lock));
+		while(!rtus_tmp->IsCQEmpty())
+			pthread_cond_wait(&(rtus_tmp->buf_signal), &(rtus_tmp->buf_lock));
+
+		HUB_Mysql hub_mysql(DB_NAME, DB_SERV_NAME, DB_USER_NAME, DB_PASSWORD);
+		Rtu *r_tmp = NULL;
+		while(rtus_tmp->IsCQEmpty())
 		{
-			pthread_mutex_lock(&(rtus_tmp->need_proc_rtus[i]->buf_lock));
-			while(!rtus_tmp->need_proc_rtus[i]->IsCQEmpty())
-				pthread_cond_wait(&(rtus_tmp->need_proc_rtus[i]->buf_signal), 
-								  &(rtus_tmp->need_proc_rtus[i]->buf_lock));
+			/* get cell and phase */
+			rtus_tmp->PrintCell(50);
+			unsigned char buf_tmp[128] = {0};
+			rtus_tmp->GetCell(r_tmp, buf_tmp, 128);
 
-			HUB_Mysql hub_mysql(DB_NAME, DB_SERV_NAME, DB_USER_NAME, DB_PASSWORD);
-			// int reg_pack_int = rtus_tmp->need_proc_rtus[i]->reg_pack_int;
-			// int co_id  = reg_pack_int >> 4 & 0x0f;
-			// int sta_id = reg_pack_int & 0x0f;
-			while(rtus_tmp->need_proc_rtus[i]->IsCQEmpty())
-			{
-				/* get cell and phase */
-				// rtus_tmp->need_proc_rtus[i]->GetCell();
+			int reg_pack_int = r_tmp->reg_pack_int;
+			int co_id  = (reg_pack_int >> 4) & 0x0f;
+			int sta_id = reg_pack_int & 0x0f;
+			printf("%d, %d\n", co_id, sta_id);
+			/* phase */
 
-			}
-			pthread_mutex_unlock(&(rtus_tmp->need_proc_rtus[i]->buf_lock));				
+			/* store in mysql */
+			
+
 		}
-		usleep(10);
+		pthread_mutex_unlock(&(rtus_tmp->buf_lock));				
+
+		usleep(100000);
 	}
 
 	return 0;

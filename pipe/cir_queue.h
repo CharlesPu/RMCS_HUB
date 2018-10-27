@@ -8,36 +8,36 @@
 #define __RMCS_HUB_CIR_QUEUE_H__
 
 #include <pthread.h>
-
-class Buffer
+class Rtu;
+struct _cell
 {
-public:
-	Buffer(int, int);
-	~Buffer();
-
- 	pthread_cond_t buf_signal;
-	pthread_mutex_t buf_lock;
-
-	virtual int GetCell(unsigned char *c, int num);
-	virtual int PutCell(unsigned char *c, int num);
-protected:
-	int buf_max_size;
-	int cell_max_size;	
+	Rtu *r;
+	unsigned char *q_buf;
 };
 
-class Cir_Queue : public Buffer
+class Cir_Queue
 {
 public:
+	Cir_Queue();
 	Cir_Queue(int, int);
 	~Cir_Queue();
 
-	unsigned char **q_buf;	// real buff
+	struct _cell *cq;	// real buff
+	pthread_cond_t buf_signal;
+	pthread_mutex_t buf_lock;
+
 	int IsCQEmpty();
-	virtual int GetCell(unsigned char *c, int num);
-	virtual int PutCell(unsigned char *c, int num);
+	int IsCQFull();
+	void PrintCell();
+	void PrintCell(int n);
+	void cq_test();
+	int GetCell(Rtu *&_r, unsigned char *c, int num);
+	int PutCell(Rtu *_r, unsigned char *c, int num);
 private:
-	unsigned char head;		// write
-	unsigned char tail;		// read
+	unsigned int head;		// write, need nmutex!
+	unsigned int tail;		// read, need nmutex!
+	int buf_max_size;
+	int cell_max_size;	
 };
 
 // #define INC(a) ((a) = ((a) + 1) & (BUF_MAX_SIZE - 1)) 

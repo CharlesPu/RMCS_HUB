@@ -1,6 +1,7 @@
 EXEC = r
 DIR_CURR=./
 DIR_OBJ=./OBJ/
+# OMP_ENABLE = 1
 
 CPP_SRCS  =$(wildcard ${DIR_CURR}*.cpp)
 CPP_SRCS +=$(wildcard ${DIR_CURR}app/*.cpp) $(wildcard ${DIR_CURR}infra/*.cpp) 
@@ -23,14 +24,17 @@ LIB_DIR 	:= $(A_LIB_DIR)
 LIBS 		:= $(LIBS_A)
 
 CC = g++
-CFLAGS = -O2 -Wall -g `mysql_config --cflags` -std=c++11
+CXXFLAGS = -O2 -Wall -g `mysql_config --cflags` -std=c++11
 INCFLAGS = $(foreach i, $(INC_DIR),-I$(i))
 LDFLAGS += $(foreach i, $(LIB_DIR),-L$(i))
 LDFLAGS += $(foreach i, $(LIBS),-l$(i))
 SQL_LINK_FLAGS = `mysql_config --libs`
 MTHREADFLAGS = -pthread
-OMPFLAGS = -fopenmp
-
+ifdef OMP_ENABLE
+	OMPFLAGS = -fopenmp
+else
+	OMPFLAGS =
+endif
 all:clean $(EXEC)
 
 $(EXEC):$(CPP_OBJS)
@@ -40,7 +44,7 @@ $(EXEC):$(CPP_OBJS)
 VPATH = $(CPP_SRCS_DIR)
 ${DIR_OBJ}%.o:${DIR_CURR}%.cpp	
 	@if [ ! -d $(DIR_OBJ) ]; then mkdir -p $(DIR_OBJ); fi; 
-	@$(CC) -c $< -o $@ $(CFLAGS) $(INCFLAGS) $(MTHREADFLAGS) $(OMPFLAGS)
+	@$(CC) -c $< -o $@ $(CXXFLAGS) $(INCFLAGS) $(MTHREADFLAGS) $(OMPFLAGS)
 
 .PHONY:clean
 clean:

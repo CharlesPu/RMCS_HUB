@@ -12,14 +12,15 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <arpa/inet.h>
-#include <math.h>
-#include <omp.h>
 #include "server.h"
 #include "log.h"
 #include "db.h"
 #include "rtu.h"
 #include "mthread.h"
 #include "config.h"
+#ifdef OMP_ENABLE
+#include <omp.h>
+#endif
 //attention!
 HUB_Server *HUB_Server::this_tmp;
 HUB_Server :: HUB_Server(int p, const char *_ip, int clie_max, int buf_max)
@@ -108,9 +109,8 @@ int HUB_Server :: Accept()
 	}
 	else
 	{
-		LOG_INFO("HUB_Server connect to %s:%d\n", inet_ntoa(clie_addr.sin_addr), ntohs(clie_addr.sin_port));
-		LOG_INFO("rtu_num:%d------------clie_fd:%d------------connect num:%d\n", 
-				0, clie_fd, ++connect_num);
+		LOG_INFO("HUB_Server connect to %s:%d, clie_fd: %d, connect_num:%d\n", 
+				inet_ntoa(clie_addr.sin_addr), ntohs(clie_addr.sin_port), clie_fd, ++connect_num);
 
 		if (SetNonblock(clie_fd))
 		{
@@ -129,7 +129,11 @@ int HUB_Server :: Accept()
 
 	return 0;
 }
-
+/* 
+	if you need to use omp or thread pool to handle every fd returned by epoll_wait(), 
+	you need to: 1. make HUB_Server::Recv reentrant: separate 'rxbuf' from HUB_Server.
+				 2. delete the write operation of HUB_Server::connect_num.
+*/
 void *HUB_Server :: Receive(void *args)
 {
 	struct _thread_args *args_tmp = (struct _thread_args*)args;
@@ -145,7 +149,9 @@ void *HUB_Server :: Receive(void *args)
 			LOG_ERROR(0, "epoll_wait fail\n");
 			continue;
 		}
-#pragma omp parallel for 
+#ifdef OMP_ENABLE
+#pragma omp parallel for
+#endif 
 		for (int i = 0; i < fd_num; i++)
 		{
 			if( !(evts[i].events & EPOLLIN))          
@@ -155,47 +161,49 @@ void *HUB_Server :: Receive(void *args)
 			else if( evts[i].events & EPOLLIN )     
 			{
 				int fd_temp = evts[i].data.fd;
-				int bytes_num = hub_server_tmp->Recv(fd_temp);
+				int bytes_num = hub_server_tmp->Recv(fd_temp); // rxbuf is only one! omp wrong!!!
 				if (bytes_num <= 0)
 				{
 					int res = epoll_ctl(hub_server_tmp->ep_fd, EPOLL_CTL_DEL, fd_temp, NULL);  
 					if (res == -1)
 						LOG_ERROR(0, "epoll_ctl_delete fail!\n");
 					close(fd_temp);
-					hub_server_tmp->connect_num--;
-					LOG_INFO("client %d closed connection\n", fd_temp);
+					hub_server_tmp->connect_num--;  // cannot write at the same time! omp wrong!!!
+					LOG_INFO("client fd %d closed connection\n", fd_temp);
 				}else 
-				// if(bytes_num == FRAME_MAX_SIZE)
+				if(bytes_num >= 8)
 				{	
 					unsigned char reg_package_x[8] = {0};
 					memcpy(reg_package_x, hub_server_tmp->rxbuf + 0, 8);
-					LOG_INFO("registration package:");
+					LOG_INFO("registration package: ");
 					for (int i = 0; i < 8; i++)
 						printf("%02x ", reg_package_x[i]);
-					printf("\n");
 
 					unsigned int reg_package = 0;
-					for (int i = 0; i < 4; ++i)
-						for (int j = 0; j < 8; ++j)
-							reg_package += ((reg_package_x[7 - i] >> j) & 0x01) * pow(2, j + i * 8);
-					LOG_DEBUG("reg_package: %s, %d \n", reg_package_x, reg_package);
+					reg_package = ((reg_package_x[6] << 4) & 0xf0) | (reg_package_x[7] & 0x0f);
+					printf(", %d\n", reg_package);
 					/* check reg pack */
 					HUB_Mysql hub_mysql(DB_NAME, DB_SERV_NAME, DB_USER_NAME, DB_PASSWORD);
 					if (!hub_mysql.ExistRtu(reg_package_x))//exist
 					{
 						/*phase and store*/
-						pthread_mutex_lock(&(rtus_tmp->rtus[reg_package].buf_lock));
-						
-						// rtus_tmp->rtus[reg_package].PutCell();
+						pthread_mutex_lock(&(rtus_tmp->buf_lock));
+						if (rtus_tmp->IsCQFull()) // if full, drop new data...
+						{
+							/* phase(drop header) */
 
 
-
+							/* store to cir_queue*/
+							rtus_tmp->PutCell(&(rtus_tmp->rtus[reg_package]), hub_server_tmp->rxbuf, bytes_num);
+						}else
+							LOG_INFO("Circle Queue is full!\n");
+						// don't forget fd!
 						rtus_tmp->rtus[reg_package].rtu_sock = fd_temp;
-						pthread_mutex_unlock(&(rtus_tmp->rtus[reg_package].buf_lock));
-						pthread_cond_signal(&(rtus_tmp->rtus[reg_package].buf_signal));
+						pthread_mutex_unlock(&(rtus_tmp->buf_lock));
+						pthread_cond_signal(&(rtus_tmp->buf_signal));
 					}else
 					{
-						LOG_INFO("illegal reg package: %s\n", reg_package_x);
+						LOG_INFO("illegal reg package!\n");
 					}
 				}
 			}		
@@ -216,15 +224,10 @@ int HUB_Server :: Recv(int fd)
 {
 	memset(rxbuf, 0, buf_max_size);
 	int num = read(fd, rxbuf, buf_max_size);
-	if (num < 0)
-	{
-		// perror("read fail!");
-		return -1;
-	}
-	else
+	if (num > 0)
 	{
 #ifdef PRINT_SRV_DATA_RAW
-		printf("rec len: %d data:\n", num);
+		LOG_INFO("recv len: %d data:\n", num);
 		for (int i = 0; i < num; i++)
 			printf("[%d]%02x ", i, rxbuf[i]);
 		printf("\n");

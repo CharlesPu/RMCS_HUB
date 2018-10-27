@@ -34,3 +34,4 @@
 # mine
 OBJ/
 config.h
+*.sql
