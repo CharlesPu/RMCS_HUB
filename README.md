@@ -11,11 +11,13 @@ A RMCS needs a hub platform to receive and pre-process data from RTUs. Under thi
 ##### description:
 * Created.
 
+---
 ##### date:         2018-10-25
 ##### version:      v0.2.0
 ##### description:
 * Finish the frame of the project.
 
+---
 ##### date:         2018-10-27
 ##### version:      v0.4.0
 ##### description:
