@@ -6,19 +6,19 @@ A RMCS needs a hub platform to receive and pre-process data from RTUs. Under thi
 
 ---
 ## VERSIONS
-**date:&emsp;&emsp;&emsp;&emsp;2018-10-19**  
+**date:&emsp;&emsp;&emsp;2018-10-19**  
 **version:&emsp;&emsp;0.0.2**  
 **description:**  
 * Created.
 
 ---
-**date:&emsp;&emsp;&emsp;&emsp;2018-10-25**  
+**date:&emsp;&emsp;&emsp;2018-10-25**  
 **version:&emsp;&emsp;0.2.0**  
 **description:**  
 * Finish the frame of the project.
 
 ---
-**date:&emsp;&emsp;&emsp;&emsp;2018-10-27**  
+**date:&emsp;&emsp;&emsp;2018-10-27**  
 **version:&emsp;&emsp;0.4.0**  
 **description:**  
 * Change the circle queue from per rtu to only one.
