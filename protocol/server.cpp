@@ -186,11 +186,11 @@ void *HUB_Server :: Receive(void *args)
 					HUB_Mysql hub_mysql(DB_NAME, DB_SERV_NAME, DB_USER_NAME, DB_PASSWORD);
 					if (!hub_mysql.ExistRtu(reg_package_x))//exist
 					{
-						/*phase and store*/
+						/*parse and store*/
 						pthread_mutex_lock(&(rtus_tmp->buf_lock));
 						if (rtus_tmp->IsCQFull()) // if full, drop new data...
 						{
-							/* phase(drop header) */
+							/* parse(drop header) */
 
 
 							/* store to cir_queue*/

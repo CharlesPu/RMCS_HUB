@@ -42,7 +42,7 @@ void *HUB_Process :: Process(void *args)
 		Rtu *r_tmp = NULL;
 		while(rtus_tmp->IsCQEmpty())
 		{
-			/* get cell and phase */
+			/* get cell and parse */
 			rtus_tmp->PrintCell(50);
 			unsigned char buf_tmp[128] = {0};
 			rtus_tmp->GetCell(r_tmp, buf_tmp, 128);
@@ -51,7 +51,7 @@ void *HUB_Process :: Process(void *args)
 			int co_id  = (reg_pack_int >> 4) & 0x0f;
 			int sta_id = reg_pack_int & 0x0f;
 			printf("%d, %d\n", co_id, sta_id);
-			/* phase */
+			/* parse */
 
 			/* store in mysql */
 			
