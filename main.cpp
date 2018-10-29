@@ -24,18 +24,16 @@ int main(int argc, char const *argv[])
 	mysql_library_init(0, NULL, NULL);
 
 	Rtus rtus(RTUS_MAX);
-	// rtus.test();
+
 	HUB_Server hub_serv(SRV_PORT, SRV_IP, SRV_CLIENT_MAX, SRV_BUF_MAX);
 	struct _thread_args t_args;
 	t_args._rtus		= &rtus;
 	t_args._hub_server	= &hub_serv;
 
-	HUB_Process hub_process;
-	HUB_CMD_Send hub_cmd_send;
 	HUB_MThread threads(&t_args, 3);
 	threads.CreateThread(SCHED_RR, 99, hub_serv.Receive);
-	threads.CreateThread(SCHED_RR, 98, hub_process.Process);
-	threads.CreateThread(SCHED_RR, 97, hub_cmd_send.CMD_Send);
+	threads.CreateThread(SCHED_RR, 98, HUB_Process :: Singleton()->Task);
+	threads.CreateThread(SCHED_RR, 97, HUB_CMD_Send :: Singleton()->Task);
 
 	threads.Run();
 

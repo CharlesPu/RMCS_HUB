@@ -19,14 +19,22 @@
 
 HUB_Process :: HUB_Process()
 {
-	// hub_mysql = new HUB_Mysql(DB_NAME, DB_SERV_NAME, DB_USER_NAME, DB_PASSWORD);
 }
 
 HUB_Process :: ~HUB_Process()
 {
-	// if (hub_mysql != NULL) {delete hub_mysql; hub_mysql = NULL;}
 }
-void *HUB_Process :: Process(void *args)
+HUB_Process* HUB_Process :: _instance = NULL;
+HUB_Process ::SingletonDestructor HUB_Process ::singleton_destructor;
+HUB_Process* HUB_Process::Singleton()
+{
+	if (_instance == NULL)
+	{
+		_instance = new HUB_Process;
+	}
+	return _instance;
+}
+void *HUB_Process :: Task(void *args)
 {
 	struct _thread_args *args_tmp = (struct _thread_args*)args;
 	Rtus *rtus_tmp 				  = args_tmp->_rtus;
@@ -42,7 +50,7 @@ void *HUB_Process :: Process(void *args)
 		Rtu *r_tmp = NULL;
 		while(rtus_tmp->IsCQEmpty())
 		{
-			/* get cell and parse */
+			/* get cell and phase */
 			rtus_tmp->PrintCell(50);
 			unsigned char buf_tmp[128] = {0};
 			rtus_tmp->GetCell(r_tmp, buf_tmp, 128);
@@ -51,7 +59,7 @@ void *HUB_Process :: Process(void *args)
 			int co_id  = (reg_pack_int >> 4) & 0x0f;
 			int sta_id = reg_pack_int & 0x0f;
 			printf("%d, %d\n", co_id, sta_id);
-			/* parse */
+			/* phase */
 
 			/* store in mysql */
 			
