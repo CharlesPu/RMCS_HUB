@@ -93,7 +93,8 @@ HUB_Server :: ~HUB_Server()
 	if(rxbuf != NULL) {delete[] rxbuf; rxbuf = NULL;}
 	if(txbuf != NULL) {delete[] txbuf; txbuf = NULL;}
 
-	if(listen_fd) close(listen_fd);
+	if(listen_fd) {close(listen_fd);listen_fd = 0;}
+	if(ep_fd) {close(ep_fd);ep_fd = 0;}
 }
 
 int HUB_Server :: Accept()

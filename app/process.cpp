@@ -59,7 +59,7 @@ void *HUB_Process :: Task(void *args)
 			int co_id  = (reg_pack_int >> 4) & 0x0f;
 			int sta_id = reg_pack_int & 0x0f;
 			printf("%d, %d\n", co_id, sta_id);
-			/* phase */
+			/* parse */
 
 			/* store in mysql */
 			
